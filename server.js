@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const io = require('socket.io').listen(4000);
+const io = require('socket.io').listen(5000);
 
 let url = 'mongodb://127.0.0.1/socketchat';
 
@@ -20,6 +20,12 @@ MongoClient.connect(url, function(err, db){
 		//Handle enter chat 
 		socket.on('username', function(username){
 			console.log(username);
+
+			users.find().toArray(function(err,res){
+				if(err) throw err;
+				socket.emit('users', res);
+			});
+
 			users.insertOne({socketID: socket.id, username: username});
 
 			socket.broadcast.emit('logon', {

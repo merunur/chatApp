@@ -1,6 +1,6 @@
 $(function (){
 	//connect to socket.io
-	var socket = io.connect('http://127.0.0.1:4000');
+	var socket = io.connect('http://127.0.0.1:5000');
 
 	/*
 	* Enter chat and load users
@@ -17,6 +17,14 @@ $(function (){
 
 			$("div#enterUsername").addClass('hidden');
 			$("div#chatMain").removeClass('hidden');
+			
+			socket.on('users', function(data){
+				data.forEach(element=>{
+					if(! $("li#"+element.socketID).length && ($("div#userList li").text() != element.username)){
+						$("div#userList ul").append('<li id="'+element.socketID+'">'+element.username+'</li>');
+					}
+				});
+			});
 		} else {
 			alert('You must enter a username!');
 		}

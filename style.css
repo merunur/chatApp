@@ -47,3 +47,32 @@ div#rooms > div {
 	position: relative;
 
 }
+
+textarea#chatText{
+	width: 850px;
+	height: 100px;
+	margin-top: 30px;
+}
+
+div#rooms > div.active {
+	color: red;
+}
+
+div#userList li {
+	cursor: pointer;
+}
+div#rooms > div.new {
+	color: blue;
+}
+div#rooms > div > span {
+	position: absolute;
+	z-index: 10;
+	top: 0; 
+	right: 5px;
+	color: white !important;
+	cursor: pointer;
+}
+
+div#rooms > div > span:hover {
+	color: black !important;
+}

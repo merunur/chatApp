@@ -26,6 +26,12 @@ MongoClient.connect(url, function(err, db){
 				socket.emit('users', res);
 			});
 
+			//send all messages
+			messages.find().toArray(function(err, res){
+				if(err) throw err;
+				socket.emit('messages', res);
+			});
+
 			users.insertOne({socketID: socket.id, username: username});
 
 			socket.broadcast.emit('logon', {
@@ -40,6 +46,19 @@ MongoClient.connect(url, function(err, db){
 			users.deleteOne({socketID: socket.id}, function(){
 				socket.broadcast.emit('logoff', socket.id);
 			});
+		});
+
+		//handle input
+		socket.on('input', function(data){
+			if(data.publicChat){
+				messages.insertOne({username: data.username, message: data.message, date: data.date});
+			}
+			io.emit('output', data); //all connections
+		});
+
+		//handle second user trigger
+		socket.on('secondUserTrigger', function(data){
+			socket.to(data.secondUserID).emit('secondUserChatWindow', data);
 		});
 
 	});

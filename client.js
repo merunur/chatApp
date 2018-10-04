@@ -10,7 +10,7 @@ $(function (){
 
 		let username = $('#username').val();
 
-		//localStorage.setItem("username", username);
+		localStorage.setItem("username", username);
 
 		if(username!= ""){
 			socket.emit('username', username);
@@ -25,6 +25,8 @@ $(function (){
 					}
 				});
 			});
+				$('div.chatroom.active').animate({scrollTop: $("div.chatroom.active").prop('scrollHeight')}, 1000);
+	
 		} else {
 			alert('You must enter a username!');
 		}
@@ -48,10 +50,181 @@ $(function (){
 		$("div#userList ul").append('<li id="'+data.socketID+'">'+data.username+'</li>');
 	});
 
-	//handle log on
+	//handle log off
 	socket.on('logoff', function(id){
 		$("li#"+id).remove();
-		//localStorage.removeItem("username");	
+		localStorage.removeItem("username");	
 	});
 
+	//handle chat input
+	$("#chatText").keypress(function(e){
+		if(e.which == 13){
+			let message = $("#chatText").val();
+			let windowID = $("div#chatWindows div.active").attr('id');
+
+			let publicChat = true;
+			let secondUserID;
+			let data;
+			
+			if(message!=""){
+				if(! ($("publicChat").hasClass('active'))){
+					publicChat = false;
+					let usersDiv = $("div.chatroom.active").attr('id');
+					let userArray = usersDiv.split("-");
+					
+					secondUsername = userArray[1];
+					secondUserID = $("li:contains("+secondUsername+")").attr('id');
+					if(!secondUserID) {
+						secondUsername = userArray[0];
+						secondUserID = $("li:contains("+secondUsername+")").attr('id');
+					
+					}
+
+					data = {
+						from: localStorage.getItem("username"),
+						message: message,
+						date: moment().format("DD/MM/YYY HH:mm"),
+						secondUserID: secondUserID,
+						secondUsername: secondUsername
+					};
+					socket.emit('secondUserTrigger', data);
+				}
+
+				socket.emit('input', {
+					username: localStorage.getItem("username"),
+					message: message,
+					date: moment().format("DD/MM/YYY HH:mm"),
+					windowID: windowID,
+					publicChat: publicChat
+				});
+				$("#chatText").val("");
+				  e.preventDefault();
+			} else {
+				alert("You must enter a message");
+			}
+		}
+	});
+
+	//handle output
+	socket.on('output', function(data){
+
+		let windowID;
+		if(! $("div#chatWindows div#"+data.windowID).length) {
+			let userArray = data.windowID.split("-");
+			$("div#chatWindows div#"+userArray[1]+"-"+userArray[0]).append("<p>[" + data.date + "] <b>" + data.username +  "</b>: " + data.message + "</p>");
+		}
+		else {
+			windowID = data.windowID;
+		}
+
+		if(data.publicChat && ! $("div#mainroom").hasClass('active')){
+			$("div#mairoom").addClass('new');
+		} else {
+			if(! $("div#"+windowID).hasClass('active')){
+				$("div#rooms div#"+data.username).addClass('new');
+			}
+		}
+
+		$("div#chatWindows div#"+windowID).append("<p>[" + data.date + "] <b>" + data.username +  "</b>: " + data.message + "</p>");
+		
+		$('div.chatroom.active').animate({scrollTop: $("div.chatroom.active").prop('scrollHeight')}, 1000);
+	});
+
+	//load chat messages
+	  socket.on('messages', function(data){
+	  	data.forEach(element => {
+	  		$("div#publicChat").append("<p>[" + element.date + "] <b>" + element.username +  "</b>: " + element.message + "</p>");
+	  	});	
+	  });
+
+	  //handle private chat
+	  $(document).on("dblclick", "div#userList li", function(){
+	  	let socketID = $(this).attr('id');
+	  	let senderUsername = localStorage.getItem("username");
+	  	let receiverUsername = $(this).text();
+
+	  	$("#chatText").focus();
+
+	    if($("div#rooms div#"+receiverUsername).length){
+	    	$("div#rooms div#"+receiverUsername).click();
+	    	return;
+	    }
+	  	$("div#rooms > div").removeClass('active');
+	  	$("div#chatWindows > div").removeClass('active');
+
+	 	$("div#rooms").append("<div id="+receiverUsername+" class='active'>"+"<span>x</span>"+receiverUsername+"</div>");
+	 	$("div#chatWindows").append("<div id="+senderUsername+ "-" + receiverUsername + " class='chatroom active'></div>");
+	  });
+
+	  // handle second user chat window
+	  socket.on("secondUserChatWindow", function(data){
+	  		if($("div#"+data.from).length){ return;}
+
+	  		$("div#rooms > div").removeClass('active');
+	  	    $("div#chatWindows > div").removeClass('active');
+
+	  	    $("div#rooms").append("<div id="+data.from+" class='active'>"+"<span>x</span>"+data.from+"</div>");
+	       	$("div#chatWindows").append("<div id="+data.from+ "-" + data.secondUsername + " class='chatroom active'></div>");
+	  });
+
+	  //choose room 
+	  $("div#rooms").on("click", "div", function(){
+	  		$("div#rooms > div").removeClass('active');
+	  		$("div#ChatWindows > div").removeClass('active');
+
+	  		$(this).addClass('active');
+	  		$(this).removeClass('new');
+
+	  		if($("div#mainroom").hasClass('active')){
+	  			$("#publicChat").addClass('active');
+	  		}
+	  		else {
+	  			let firstUsername = localStorage.getItem("username");
+	  			let secondUsername = $(this).attr('id');
+	  			$("div#chatWindows div#"+secondUsername+"-"+firstUsername).addClass('active');
+	  			$("div#chatWindows div#"+firstUsername+"-"+secondUsername).addClass('active');
+	  		
+	  		}
+	  });
+
+	  //close private chat
+	  $("div#rooms").on('click', 'span', function(e){
+	  	e.stopPropagation();
+
+	  	let firstUsername = localStorage.getItem("username");
+	  	let secondUsername = $(this).parent().attr('id');
+
+	  	$("div#chatWindows div#"+secondUsername+"-"+firstUsername).remove();
+	  	$("div#chatWindows div#"+firstUsername+"-"+secondUsername).remove();
+
+	  	$(this).parent().remove();
+
+	  	if($("div#rooms > div").length ==1){
+	  		$("div#mairoom").addClass('active');
+	  		$("div#publicChat").addClass('active');
+	  	}
+	  		
+
+	  });
+	  	
+
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,7 +1,7 @@
 $(function () {
 
     // Connect to socket.io
-    var socket = io.connect('http://127.0.0.1:5000');
+    var socket = io.connect('http://18.185.127.23:5000');
 
     /*
     * Enter chat and load users

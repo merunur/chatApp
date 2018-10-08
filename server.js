@@ -1,7 +1,7 @@
 const MongoClient = require('mongodb').MongoClient;
 const io = require('socket.io').listen(5000);
 
-let url = 'mongodb://127.0.0.1/socketchat';
+let url = 'mongodb://18.185.127.23/socketchat';
 
 // Connect to MongoDB
 MongoClient.connect(url, function(err, db){

@@ -43,6 +43,7 @@ MongoClient.connect(url, function(err, db){
 		//handle log off
 		socket.on('disconnect', function(){
 			console.log("User: "+socket.id+" disconnected");
+			
 			users.deleteOne({socketID: socket.id}, function(){
 				socket.broadcast.emit('logoff', socket.id);
 			});

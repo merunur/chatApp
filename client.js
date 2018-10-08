@@ -1,230 +1,257 @@
-$(function (){
-	//connect to socket.io
-	var socket = io.connect('http://127.0.0.1:5000');
+$(function () {
 
-	/*
-	* Enter chat and load users
-	*/
-	$("a#enterChat").click(function(e){
-		e.preventDefault();
+    // Connect to socket.io
+    var socket = io.connect('http://127.0.0.1:5000');
 
-		let username = $('#username').val();
+    /*
+    * Enter chat and load users
+    */
+    $("a#enterChat").click(function (e) {
+        e.preventDefault();
 
-		localStorage.setItem("username", username);
+        let username = $("#username").val();
 
-		if(username!= ""){
-			socket.emit('username', username);
+        localStorage.setItem("username", username);
 
-			$("div#enterUsername").addClass('hidden');
-			$("div#chatMain").removeClass('hidden');
-			
-			socket.on('users', function(data){
-				data.forEach(element=>{
-					if(! $("li#"+element.socketID).length && ($("div#userList li").text() != element.username)){
-						$("div#userList ul").append('<li id="'+element.socketID+'">'+element.username+'</li>');
-					}
-				});
-			});
-				$('div.chatroom.active').animate({scrollTop: $("div.chatroom.active").prop('scrollHeight')}, 1000);
-	
-		} else {
-			alert('You must enter a username!');
-		}
+        if (username != "") {
 
-	}); 
+            socket.emit("username", username);
 
-	//enter chat on ENTER
-	$("input#username").keypress(function(e){
-		let username = $('#username').val();
-		if(e.which === 13){
-			if(username!= ""){
-				$("a#enterChat").click();
-		}	else {
-			alert('You must enter a username!');
-		}
-		}
-	});
+            $("div#enterUsername").addClass('hidden');
+            $("div#chatMain").removeClass('hidden');
 
-	//handle log on
-	socket.on('logon', function(data){
-		$("div#userList ul").append('<li id="'+data.socketID+'">'+data.username+'</li>');
-	});
+            socket.on('users', function (data) {
+                data.forEach(element => {
+                    if ( ! $("li#" + element.socketID).length && $("div#userList li").text() != element.username) {
+                        $("div#userList ul").append('<li id="' + element.socketID + '">' + element.username + '</li>');
+                    }
+                });
+            });
 
-	//handle log off
-	socket.on('logoff', function(id){
-		$("li#"+id).remove();
-		localStorage.removeItem("username");	
-	});
+            $('div.chatroom.active').animate({scrollTop: $('div.chatroom.active').prop('scrollHeight')}, 1000);
+            
+        } else {
+            alert('You must enter a username!')
+        }
 
-	//handle chat input
-	$("#chatText").keypress(function(e){
-		if(e.which == 13){
-			let message = $("#chatText").val();
-			let windowID = $("div#chatWindows div.active").attr('id');
+    });
 
-			let publicChat = true;
-			let secondUserID;
-			let data;
-			
-			if(message!=""){
-				if(! ($("publicChat").hasClass('active'))){
-					publicChat = false;
-					let usersDiv = $("div.chatroom.active").attr('id');
-					let userArray = usersDiv.split("-");
-					
-					secondUsername = userArray[1];
-					secondUserID = $("li:contains("+secondUsername+")").attr('id');
-					if(!secondUserID) {
-						secondUsername = userArray[0];
-						secondUserID = $("li:contains("+secondUsername+")").attr('id');
-					
-					}
+    /*
+    * Enter chat on ENTER
+    */
+    $("input#username").keypress(function (e) {
+        let username = $("#username").val();
 
-					data = {
-						from: localStorage.getItem("username"),
-						message: message,
-						date: moment().format("DD/MM/YYY HH:mm"),
-						secondUserID: secondUserID,
-						secondUsername: secondUsername
-					};
-					socket.emit('secondUserTrigger', data);
-				}
+        if (e.which == 13) {
+            if (username != "") {
+                $("a#enterChat").click();
+            } else {
+                alert('You must enter a username!')
+            }
+        }
 
-				socket.emit('input', {
-					username: localStorage.getItem("username"),
-					message: message,
-					date: moment().format("DD/MM/YYY HH:mm"),
-					windowID: windowID,
-					publicChat: publicChat
-				});
-				$("#chatText").val("");
-				  e.preventDefault();
-			} else {
-				alert("You must enter a message");
-			}
-		}
-	});
 
-	//handle output
-	socket.on('output', function(data){
+    });
 
-		let windowID;
-		if(! $("div#chatWindows div#"+data.windowID).length) {
-			let userArray = data.windowID.split("-");
-			$("div#chatWindows div#"+userArray[1]+"-"+userArray[0]).append("<p>[" + data.date + "] <b>" + data.username +  "</b>: " + data.message + "</p>");
-		}
-		else {
-			windowID = data.windowID;
-		}
+    /*
+    * Handle log on
+    */
+    socket.on('logon', function (data) {
+        $("div#userList ul").append('<li id="' + data.socketID + '">' + data.username + '</li>');
+    });
 
-		if(data.publicChat && ! $("div#mainroom").hasClass('active')){
-			$("div#mairoom").addClass('new');
-		} else {
-			if(! $("div#"+windowID).hasClass('active')){
-				$("div#rooms div#"+data.username).addClass('new');
-			}
-		}
+    /*
+    * Handle log off
+    */
+    socket.on('logoff', function (id) {
+        $("li#" + id).remove();
+        localStorage.removeItem("username");
+    });
 
-		$("div#chatWindows div#"+windowID).append("<p>[" + data.date + "] <b>" + data.username +  "</b>: " + data.message + "</p>");
-		
-		$('div.chatroom.active').animate({scrollTop: $("div.chatroom.active").prop('scrollHeight')}, 1000);
-	});
+    /*
+    * Handle chat input
+    */
+    $("#chatText").keypress(function (e) {
 
-	//load chat messages
-	  socket.on('messages', function(data){
-	  	data.forEach(element => {
-	  		$("div#publicChat").append("<p>[" + element.date + "] <b>" + element.username +  "</b>: " + element.message + "</p>");
-	  	});	
-	  });
+        if (e.which == 13) {
 
-	  //handle private chat
-	  $(document).on("dblclick", "div#userList li", function(){
-	  	let socketID = $(this).attr('id');
-	  	let senderUsername = localStorage.getItem("username");
-	  	let receiverUsername = $(this).text();
+            let message = $("#chatText").val();
+            let windowID = $("div#chatWindows div.active").attr('id');
+            let publicChat = true;7
+            let secondUsername = false;
+            let secondUserID;
+            let data;
 
-	  	$("#chatText").focus();
+            if (message != "") {
 
-	    if($("div#rooms div#"+receiverUsername).length){
-	    	$("div#rooms div#"+receiverUsername).click();
-	    	return;
-	    }
-	  	$("div#rooms > div").removeClass('active');
-	  	$("div#chatWindows > div").removeClass('active');
+                if (! ($("#publicChat").hasClass('active'))) {
+                    publicChat = false;
+                    let usersDiv = $("div.chatroom.active").attr('id');
+                    let userArray = usersDiv.split("-");
 
-	 	$("div#rooms").append("<div id="+receiverUsername+" class='active'>"+"<span>x</span>"+receiverUsername+"</div>");
-	 	$("div#chatWindows").append("<div id="+senderUsername+ "-" + receiverUsername + " class='chatroom active'></div>");
-	  });
+                    secondUsername = userArray[1];
+                    secondUserID = $("li:contains(" + secondUsername + ")").attr('id');
+                    if (! secondUserID) {
+                        secondUsername = userArray[0];
+                        secondUserID = $("li:contains(" + secondUsername + ")").attr('id');
+                    }
 
-	  // handle second user chat window
-	  socket.on("secondUserChatWindow", function(data){
-	  		if($("div#"+data.from).length){ return;}
+                    data = {
+                        from: localStorage.getItem("username"),
+                        message: message,
+                        date: moment().format("DD/MM/YYYY HH:mm"),
+                        secondUserID: secondUserID,
+                        secondUsername: secondUsername                    
+                    };
 
-	  		$("div#rooms > div").removeClass('active');
-	  	    $("div#chatWindows > div").removeClass('active');
+                    // console.log(data);
+                    socket.emit('secondUserTrigger', data);
+                }
 
-	  	    $("div#rooms").append("<div id="+data.from+" class='active'>"+"<span>x</span>"+data.from+"</div>");
-	       	$("div#chatWindows").append("<div id="+data.from+ "-" + data.secondUsername + " class='chatroom active'></div>");
-	  });
+                socket.emit('input', {
+                    username: localStorage.getItem("username"),
+                    message: message,
+                    date: moment().format("DD/MM/YYYY HH:mm"),
+                    windowID: windowID,
+                    publicChat: publicChat
+                });
 
-	  //choose room 
-	  $("div#rooms").on("click", "div", function(){
-	  		$("div#rooms > div").removeClass('active');
-	  		$("div#ChatWindows > div").removeClass('active');
+            $("#chatText").val("");
+            e.preventDefault();
 
-	  		$(this).addClass('active');
-	  		$(this).removeClass('new');
+            } else {
+                alert('You must enter a message');
+            }
+        }        
 
-	  		if($("div#mainroom").hasClass('active')){
-	  			$("#publicChat").addClass('active');
-	  		}
-	  		else {
-	  			let firstUsername = localStorage.getItem("username");
-	  			let secondUsername = $(this).attr('id');
-	  			$("div#chatWindows div#"+secondUsername+"-"+firstUsername).addClass('active');
-	  			$("div#chatWindows div#"+firstUsername+"-"+secondUsername).addClass('active');
-	  		
-	  		}
-	  });
+    });
 
-	  //close private chat
-	  $("div#rooms").on('click', 'span', function(e){
-	  	e.stopPropagation();
+    /*
+    * Handle output
+    */
+    socket.on('output', function (data) {
 
-	  	let firstUsername = localStorage.getItem("username");
-	  	let secondUsername = $(this).parent().attr('id');
+        let windowID;
 
-	  	$("div#chatWindows div#"+secondUsername+"-"+firstUsername).remove();
-	  	$("div#chatWindows div#"+firstUsername+"-"+secondUsername).remove();
+        if (! $("div#chatWindows div#"+data.windowID).length ) {
+            let userArray = data.windowID.split("-");
+            windowID = userArray[1] + "-" + userArray[0];
+        } else {
+            windowID = data.windowID;
+        }
 
-	  	$(this).parent().remove();
+        if (data.publicChat && ! $("div#mainroom").hasClass('active')) {
+            $("div#mainroom").addClass('new');
+        } else {
+            if (! $("div#"+windowID).hasClass('active')) {
+                $("div#rooms div#"+data.username).addClass('new');
+            }
+        }
+        var now = moment().format("DD/MM/YYYY HH:mm");
+        var diff = moment.duration(moment(now).diff(moment(data.date)));
+        var minutes = parseInt(diff.asMinutes());
+      //  $("div#chatWindows div#"+windowID).append("<p>[" + data.date + "] <b>" + data.username +  "</b>: " + data.message + "</p>");
+        $("div#chatWindows div#"+windowID).append("<div class='answer-right'><div class='right-name'> " + data.username + " </div><div class='right-msg'>" + data.message +  "</div><div class='right-time'> " + minutes + " minutes ago</div></div>");
+        	
 
-	  	if($("div#rooms > div").length ==1){
-	  		$("div#mairoom").addClass('active');
-	  		$("div#publicChat").addClass('active');
-	  	}
-	  		
+        $('div.chatroom.active').animate({scrollTop: $('div.chatroom.active').prop('scrollHeight')}, 1000);
+    });
 
-	  });
-	  	
+    /*
+    * Load chat messages
+    */
+    socket.on('messages', function (data) {
+    	let localUsername = localStorage.getItem("username");
+    	var now = moment().format("DD/MM/YYYY HH:mm");
+        data.forEach(element => {
+        	var diff = moment.duration(moment(now).diff(moment(element.date)));
+        	var minutes = parseInt(diff.asMinutes());
+        	if(element.username === localUsername){
+        		$("div#publicChat").append("<div class='answer-right'><div class='right-name'> " + element.username + " </div><div class='right-msg'>" + element.message +  "</div><div class='right-time'> " + minutes + " minutes ago</div></div>");
+        	} else {
+           $("div#publicChat").append("<div class='answer-left'><div class='left-name'> " + element.username + " </div><div class='left-msg'>" + element.message +  "</div><div class='left-time'> " + minutes + " minutes ago</div></div>");
+        }
+        });
+    });
+
+    /*
+    * Handle private chat 
+    */
+    $(document).on("dblclick", "div#userList li", function () {
+
+        let socketID = $(this).attr('id');
+        let senderUsername = localStorage.getItem("username");
+        let receiverUsername = $(this).text();
+
+        $("#chatText").focus();
+
+        if ( $("div#rooms div#"+receiverUsername).length ) {
+            $("div#rooms div#"+receiverUsername).click();
+            return;
+        }
+
+        $("div#rooms > div").removeClass('active');
+        $("div#chatWindows > div").removeClass('active');
+
+        $("div#rooms").append("<div id=" + receiverUsername + " class='active'>" + "<span>x</span>" + receiverUsername + "</div>");
+        $("div#chatWindows").append("<div id=" + senderUsername + "-" + receiverUsername + " class='chatroom active'></div>");
+    });
+
+    /*
+    * Handle second user chat window
+    */
+    socket.on('secondUserChatWindow', function (data) {
+        // console.log(data);
+        if ( $("div#"+data.from).length ) return;
+
+        $("div#rooms > div").removeClass('active');
+        $("div#chatWindows > div").removeClass('active');
+
+        $("div#rooms").append("<div id=" + data.from + " class='active'>" + "<span>x</span>" + data.from + "</div>");
+        $("div#chatWindows").append("<div id=" + data.from + "-" + data.secondUsername + " class='chatroom active'></div>");
+    });
+
+    /*
+    * Choose room
+    */
+    $("div#rooms").on("click", "div", function () {
+
+        $("div#rooms > div").removeClass('active');
+        $("div#chatWindows > div").removeClass('active');
+
+        $(this).addClass('active');
+        $(this).removeClass('new');
+
+        if ( $("div#mainroom").hasClass('active') ) {
+            $("#publicChat").addClass('active');
+        } else {
+
+            let firstUsername = localStorage.getItem("username");
+            let secondUsername = $(this).attr('id');
+
+            $("div#chatWindows div#"+firstUsername + "-" + secondUsername).addClass('active');
+            $("div#chatWindows div#"+secondUsername + "-" + firstUsername).addClass('active');
+        }
+    });
+
+    /*
+    * Close private chat
+    */
+    $("div#rooms").on('click', 'span', function (e) {
+        e.stopPropagation();
+
+        let firstUsername = localStorage.getItem("username");
+        let secondUsername = $(this).parent().attr('id');
+
+        $("div#chatWindows div#"+firstUsername + "-" + secondUsername).remove();
+        $("div#chatWindows div#"+secondUsername + "-" + firstUsername).remove();
+
+        $(this).parent().remove();
+
+        if ( $("div#rooms > div").length == 1 ) {
+            $("div#mainroom").addClass('active');
+            $("div#publicChat").addClass('active');
+        }
+    });
 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

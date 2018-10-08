@@ -151,9 +151,13 @@ $(function () {
         var diff = moment.duration(moment(now).diff(moment(data.date)));
         var minutes = parseInt(diff.asMinutes());
       //  $("div#chatWindows div#"+windowID).append("<p>[" + data.date + "] <b>" + data.username +  "</b>: " + data.message + "</p>");
-        $("div#chatWindows div#"+windowID).append("<div class='answer-right'><div class='right-name'> " + data.username + " </div><div class='right-msg'>" + data.message +  "</div><div class='right-time'> " + minutes + " minutes ago</div></div>");
-        	
-
+        let localUsername = localStorage.getItem("username");
+        if(data.username==localUsername){
+          $("div#chatWindows div#"+windowID).append("<div class='answer-sent'><div class='sent-name'> " + data.username + " </div><p class='sent-msg'>" + data.message +  "</p><div class='sent-time'> " + moment(data.date).format("HH:mm") + " | " + moment(data.date).format("MMMM DD") +"</div></div>");  
+       }
+        else {
+            $("div#chatWindows div#"+windowID).append("<div class='answer-received'><div class='received-name'> " + data.username + " </div><p class='received-msg'>" + data.message +  "</p><div class='received-time'> " + moment(data.date).format("HH:mm") + " | " + moment(data.date).format("MMMM DD")  + "</div></div>");  
+        }
         $('div.chatroom.active').animate({scrollTop: $('div.chatroom.active').prop('scrollHeight')}, 1000);
     });
 
@@ -167,9 +171,9 @@ $(function () {
         	var diff = moment.duration(moment(now).diff(moment(element.date)));
         	var minutes = parseInt(diff.asMinutes());
         	if(element.username === localUsername){
-        		$("div#publicChat").append("<div class='answer-right'><div class='right-name'> " + element.username + " </div><div class='right-msg'>" + element.message +  "</div><div class='right-time'> " + minutes + " minutes ago</div></div>");
+        		$("div#publicChat").append("<div class='answer-sent'><div class='sent-name'> " + element.username + " </div><p class='sent-msg'>" + element.message +  "</p><div class='sent-time'> " + moment(element.date).format("HH:mm") + " | " + moment(element.date).format("MMMM DD")  + " </div></div>");
         	} else {
-           $("div#publicChat").append("<div class='answer-left'><div class='left-name'> " + element.username + " </div><div class='left-msg'>" + element.message +  "</div><div class='left-time'> " + minutes + " minutes ago</div></div>");
+           $("div#publicChat").append("<div class='answer-received'><div class='received-name'> " + element.username + " </div><p class='received-msg'>" + element.message +  "</p><div class='received-time'> " + moment(data.element).format("HH:mm") + " | " + moment(data.element).format("MMMM DD")  + "</div></div>");
         }
         });
     });
